@@ -6,10 +6,7 @@ enum PromiseState {
 }
 
 // Promise 处理函数的类型定义
-type Executor = (
-  resolve: (value: any) => void,
-  reject: (reason: any) => void
-) => void;
+type Executor = (resolve: (value: any) => void, reject: (reason: any) => void) => void;
 
 // 回调函数类型定义
 type OnFulfilled = (value: any) => any;
@@ -39,7 +36,7 @@ class MyPromise {
       this.state = PromiseState.FULFILLED;
       this.value = value;
       // 执行所有成功回调
-      this.onFulfilledCallbacks.forEach(callback => callback());
+      this.onFulfilledCallbacks.forEach((callback) => callback());
     }
   }
 
@@ -50,7 +47,7 @@ class MyPromise {
       this.state = PromiseState.REJECTED;
       this.reason = reason;
       // 执行所有失败回调
-      this.onRejectedCallbacks.forEach(callback => callback());
+      this.onRejectedCallbacks.forEach((callback) => callback());
     }
   }
 
@@ -58,7 +55,12 @@ class MyPromise {
   then(onFulfilled?: OnFulfilled, onRejected?: OnRejected): MyPromise {
     // 处理参数可选的情况
     onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : (value: any) => value;
-    onRejected = typeof onRejected === 'function' ? onRejected : (reason: any) => { throw reason };
+    onRejected =
+      typeof onRejected === 'function'
+        ? onRejected
+        : (reason: any) => {
+            throw reason;
+          };
 
     // 返回新的Promise以实现链式调用
     const promise2 = new MyPromise((resolve, reject) => {
@@ -100,12 +102,7 @@ class MyPromise {
   }
 
   // 处理Promise解析过程
-  private resolvePromise(
-    promise2: MyPromise,
-    x: any,
-    resolve: Function,
-    reject: Function
-  ): void {
+  private resolvePromise(promise2: MyPromise, x: any, resolve: Function, reject: Function): void {
     // 防止循环引用
     if (promise2 === x) {
       reject(new TypeError('Chaining cycle detected for promise'));
@@ -117,12 +114,12 @@ class MyPromise {
     if (x instanceof MyPromise) {
       // 如果x是Promise实例，等待其状态改变
       x.then(
-        value => {
+        (value) => {
           this.resolvePromise(promise2, value, resolve, reject);
         },
-        reason => {
+        (reason) => {
           reject(reason);
-        }
+        },
       );
     } else if (x !== null && (typeof x === 'object' || typeof x === 'function')) {
       // 如果x是对象或函数
@@ -140,7 +137,7 @@ class MyPromise {
               if (called) return;
               called = true;
               reject(reason);
-            }
+            },
           );
         } else {
           resolve(x);
@@ -168,7 +165,7 @@ class MyPromise {
       (reason: any) =>
         MyPromise.resolve(callback()).then(() => {
           throw reason;
-        })
+        }),
     );
   }
 
@@ -177,7 +174,7 @@ class MyPromise {
     if (value instanceof MyPromise) {
       return value;
     }
-    return new MyPromise(resolve => resolve(value));
+    return new MyPromise((resolve) => resolve(value));
   }
 
   // 静态reject方法
@@ -198,16 +195,16 @@ class MyPromise {
 
       promises.forEach((promise, index) => {
         MyPromise.resolve(promise).then(
-          value => {
+          (value) => {
             results[index] = value;
             count++;
             if (count === promises.length) {
               resolve(results);
             }
           },
-          reason => {
+          (reason) => {
             reject(reason);
-          }
+          },
         );
       });
     });
@@ -217,7 +214,7 @@ class MyPromise {
   static race(promises: any[]): MyPromise {
     return new MyPromise((resolve, reject) => {
       if (promises.length === 0) return;
-      promises.forEach(promise => {
+      promises.forEach((promise) => {
         MyPromise.resolve(promise).then(resolve, reject);
       });
     });
@@ -225,3 +222,26 @@ class MyPromise {
 }
 
 export default MyPromise;
+
+/**
+ * 1. 声明变量保存状态，通过执行器函数来改变状态，并确保状态只能从 PENFDING 转为其它并且不能再改变
+ *
+ * 要点1: 在 constructor 中立即执行执行器函数，执行出错则立即转为 REJECTED 状态。
+ * 要点2: 在 resolve/reject 函数中确保状态只能转换一次
+ * 要点3: 因为 resolve/reject 函数要在外部调用，并且要访问内部的 state，所以要绑定 this 为当前实例
+ */
+
+/**
+ * 为什么 onFulfilledCallbacks 要定义为一个数组呢？
+ *
+ * 因为可以多次调用 then
+ * p.then(value => console.log('第一次then:', value));
+ * p.then(value => console.log('第二次then:', value));
+ * p.then(value => console.log('第三次then:', value));
+ */
+
+/**
+ * queueMicrotask 的作用是什么？
+ *
+ * queueMicrotask 是一个全局函数，它的主要作用是将一个任务加入到微任务队列中。
+ */
