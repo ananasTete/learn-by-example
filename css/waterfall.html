@@ -1,129 +1,131 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
     <style>
-        #wrapper {
-            position: relative;
-            width: 80%;
-            margin: 0 auto;
-            border: 2px solid salmon;
-        }
+      #wrapper {
+        position: relative;
+        width: 80%;
+        margin: 0 auto;
+        border: 2px solid salmon;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div id="wrapper"></div>
 
     <script>
-        const wrapper = document.getElementById('wrapper');
+      const wrapper = document.getElementById('wrapper');
 
-        // 每列最小宽度
-        const imgMinWidth = 200;
-        // 列与行间距
-        const columnGap = 20;
+      // 每列最小宽度
+      const imgMinWidth = 200;
+      // 列与行间距
+      const columnGap = 20;
 
-        // 计算列数与列宽
-        const checkColumns = () => {
-            const wrapperWidth = wrapper.clientWidth;
-            let maxColumnsCount = Math.floor(wrapperWidth / imgMinWidth);
+      // 计算列数与列宽
+      const checkColumns = () => {
+        const wrapperWidth = wrapper.clientWidth;
+        let maxColumnsCount = Math.floor(wrapperWidth / imgMinWidth);
 
-            // 计算容器剩余空间是否能容纳与列数匹配的列间距，不能则减少列数，相应地会增加列宽
-            if (wrapperWidth - maxColumnsCount * imgMinWidth < (maxColumnsCount - 1) * columnGap) {
-                maxColumnsCount--;
-            }
-
-            // 计算列宽
-            const itemWidth = (wrapperWidth - (maxColumnsCount - 1) * columnGap) / maxColumnsCount;
-            return { columnsCount: maxColumnsCount, itemWidth };
+        // 计算容器剩余空间是否能容纳与列数匹配的列间距，不能则减少列数，相应地会增加列宽
+        if (wrapperWidth - maxColumnsCount * imgMinWidth < (maxColumnsCount - 1) * columnGap) {
+          maxColumnsCount--;
         }
 
-        const checkImages = () => { }
+        // 计算列宽
+        const itemWidth = (wrapperWidth - (maxColumnsCount - 1) * columnGap) / maxColumnsCount;
+        return { columnsCount: maxColumnsCount, itemWidth };
+      };
 
-        // 随机获取四十张图片，不用看实现
-        const getImg = () => {
-            const imgUrls = [
-                'https://picsum.photos/200/300',
-                'https://picsum.photos/300/400',
-                'https://picsum.photos/250/350',
-                'https://picsum.photos/280/320',
-                'https://picsum.photos/220/330'
-            ];
+      const checkImages = () => {};
 
-            const images = [];
-            for (let i = 0; i < 20; i++) {
-                const randomUrl = imgUrls[Math.floor(Math.random() * imgUrls.length)];
-                // 从URL中提取宽高
-                const [width, height] = randomUrl.split('/').slice(-2).map(Number);
+      // 随机获取四十张图片，不用看实现
+      const getImg = () => {
+        const imgUrls = [
+          'https://picsum.photos/200/300',
+          'https://picsum.photos/300/400',
+          'https://picsum.photos/250/350',
+          'https://picsum.photos/280/320',
+          'https://picsum.photos/220/330',
+        ];
 
-                images.push({
-                    url: `${randomUrl}?random=${i}`,
-                    ratio: height / width
-                });
-            }
-            return images;
+        const images = [];
+        for (let i = 0; i < 20; i++) {
+          const randomUrl = imgUrls[Math.floor(Math.random() * imgUrls.length)];
+          // 从URL中提取宽高
+          const [width, height] = randomUrl.split('/').slice(-2).map(Number);
+
+          images.push({
+            url: `${randomUrl}?random=${i}`,
+            ratio: height / width,
+          });
+        }
+        return images;
+      };
+
+      const getExtremumIndex = (list, isMax = false) => {
+        // 获取数组中的最大值或最小值的索引，相同值则取第一个索引
+        let extremumIndex = 0;
+        let extremumValue = list[0];
+
+        for (let i = 1; i < list.length; i++) {
+          if (isMax ? list[i] > extremumValue : list[i] < extremumValue) {
+            extremumValue = list[i];
+            extremumIndex = i;
+          }
         }
 
-        const getExtremumIndex = (list, isMax = false) => {
-            // 获取数组中的最大值或最小值的索引，相同值则取第一个索引
-            let extremumIndex = 0;
-            let extremumValue = list[0];
+        return extremumIndex;
+      };
 
-            for (let i = 1; i < list.length; i++) {
-                if (isMax ? list[i] > extremumValue : list[i] < extremumValue) {
-                    extremumValue = list[i];
-                    extremumIndex = i;
-                }
-            }
+      const generateImg = (img, itemWidth, top, left) => {
+        const imgElement = document.createElement('img');
+        imgElement.src = img.url;
+        imgElement.style.width = itemWidth + 'px';
+        imgElement.style.height = itemWidth * img.ratio + 'px';
+        imgElement.style.position = 'absolute';
+        imgElement.style.top = top + 'px';
+        imgElement.style.left = left + 'px';
+        imgElement.style.backgroundColor = 'gray';
+        return imgElement;
+      };
 
-            return extremumIndex;
-        }
+      const init = () => {
+        // 接口获取图片数组及其宽高比，宽高比是为了避免大量重排
+        const images = getImg();
+        // 计算列数与每列宽度
+        const { columnsCount, itemWidth } = checkColumns();
+        // 记录每列高度
+        const columnHeights = new Array(columnsCount).fill(0);
 
-        const generateImg = (img, itemWidth, top, left) => {
-            const imgElement = document.createElement('img');
-            imgElement.src = img.url;
-            imgElement.style.width = itemWidth + 'px';
-            imgElement.style.height = itemWidth * img.ratio + 'px';
-            imgElement.style.position = 'absolute';
-            imgElement.style.top = top + 'px';
-            imgElement.style.left = left + 'px';
-            imgElement.style.backgroundColor = 'gray';
-            return imgElement;
-        }
+        // 创建文档片段放方便一次添加
+        const fragment = document.createDocumentFragment();
 
-        const init = () => {
-            // 接口获取图片数组及其宽高比，宽高比是为了避免大量重排
-            const images = getImg();
-            // 计算列数与每列宽度
-            const { columnsCount, itemWidth } = checkColumns();
-            // 记录每列高度
-            const columnHeights = new Array(columnsCount).fill(0);
+        // 遍历每张图片
+        images.forEach((img, index) => {
+          // 获取高度最小的列的索引，把图片添加到那一列，并由此计算图片 top /left
+          const columnIndex = getExtremumIndex(columnHeights);
+          const imgDom = generateImg(
+            img,
+            itemWidth,
+            columnHeights[columnIndex] + (columnHeights[columnIndex] ? columnGap : 0),
+            columnIndex * (itemWidth + columnGap),
+          );
+          fragment.appendChild(imgDom);
+          // 更新列高
+          columnHeights[columnIndex] += img.ratio * itemWidth + columnGap;
+        });
 
-            // 创建文档片段放方便一次添加
-            const fragment = document.createDocumentFragment();
+        // 添加图片
+        wrapper.appendChild(fragment);
+        // 设置容器高度为最高的列的高度
+        wrapper.style.height = columnHeights[getExtremumIndex(columnHeights, true)] + 'px';
+      };
 
-            // 遍历每张图片
-            images.forEach((img, index) => {
-                // 获取高度最小的列的索引，把图片添加到那一列，并由此计算图片 top /left
-                const columnIndex = getExtremumIndex(columnHeights);
-                const imgDom = generateImg(img, itemWidth, columnHeights[columnIndex] + (columnHeights[columnIndex] ? columnGap : 0), columnIndex * (itemWidth + columnGap));
-                fragment.appendChild(imgDom);
-                // 更新列高
-                columnHeights[columnIndex] += img.ratio * itemWidth + columnGap;
-            })
-
-            // 添加图片
-            wrapper.appendChild(fragment);
-            // 设置容器高度为最高的列的高度
-            wrapper.style.height = columnHeights[getExtremumIndex(columnHeights, true)] + 'px';
-        };
-
-        init();
-
+      init();
     </script>
-</body>
-
+  </body>
 </html>
