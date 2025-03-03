@@ -41,7 +41,7 @@ instance.interceptors.request.use(
     setCancelSignal(config);
     return config;
   },
-  (error: any) => {
+  (error) => {
     // 请求失败移除
     if (error.config) {
       removePendingRequest(error.config);
@@ -56,7 +56,7 @@ instance.interceptors.response.use(
     removePendingRequest(response.config);
     return response.data;
   },
-  (error: any) => {
+  (error) => {
     // 请求失败移除
     if (axios.isCancel(error)) {
       return Promise.reject(new Error('重复请求被取消'));
