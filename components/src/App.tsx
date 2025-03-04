@@ -1,9 +1,9 @@
 import './App.css';
-import { ImageComponent } from '../components/Image';
+import ChartDemo from '../components/Chart/demo';
 function App() {
   return (
     <div className="flex flex-col items-center justify-center h-screen">
-      <ImageComponent />
+      <ChartDemo />
     </div>
   );
 }
