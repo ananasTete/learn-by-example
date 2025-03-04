@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>激光笔效果</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #f0f0f0;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="laserCanvas"></canvas>
+    <script>
+        class LaserPen {
+            constructor() {
+                this.canvas = document.getElementById('laserCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.points = [];
+                this.isDrawing = false;
+                this.lastTime = 0;
+
+                this.init();
+                this.bindEvents();
+                this.animate();
+            }
+
+            init() {
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+            }
+
+            resizeCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            bindEvents() {
+                document.addEventListener('mousedown', (e) => {
+                    this.isDrawing = true;
+                    this.points = [];
+                    this.addPoint(e.clientX, e.clientY);
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (!this.isDrawing) return;
+                    this.addPoint(e.clientX, e.clientY);
+                });
+
+                document.addEventListener('mouseup', () => {
+                    this.isDrawing = false;
+                });
+            }
+
+            addPoint(x, y) {
+                this.points.push({
+                    x,
+                    y,
+                    timestamp: Date.now(),
+                    width: 5
+                });
+            }
+
+            animate() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                const now = Date.now();
+                const lifetime = 1000; // 轨迹存在时间（毫秒）
+
+                // 移除过期的点
+                this.points = this.points.filter(point => {
+                    return now - point.timestamp < lifetime;
+                });
+
+                // 绘制轨迹
+                if (this.points.length > 1) {
+                    this.ctx.beginPath();
+                    this.ctx.lineCap = 'round';
+                    this.ctx.lineJoin = 'round';
+
+                    for (let i = 1; i < this.points.length; i++) {
+                        const point = this.points[i];
+                        const prevPoint = this.points[i - 1];
+
+                        // 计算点的年龄和透明度
+                        const age = now - point.timestamp;
+                        const alpha = Math.max(0, 1 - age / lifetime);
+
+                        // 计算控制点
+                        const cx = (prevPoint.x + point.x) / 2;
+                        const cy = (prevPoint.y + point.y) / 2;
+
+                        this.ctx.strokeStyle = `rgba(255, 0, 0, ${alpha})`;
+                        this.ctx.lineWidth = point.width * alpha;
+
+                        if (i === 1) {
+                            this.ctx.moveTo(prevPoint.x, prevPoint.y);
+                        }
+
+                        // 使用二次贝塞尔曲线实现平滑效果
+                        this.ctx.quadraticCurveTo(prevPoint.x, prevPoint.y, cx, cy);
+                    }
+                    this.ctx.stroke();
+                }
+
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        // 初始化激光笔
+        new LaserPen();
+    </script>
+</body>
+
+</html>

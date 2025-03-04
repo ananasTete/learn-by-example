@@ -1,6 +1,8 @@
 import Chart from './index';
 import { EChartsOption } from 'echarts';
 import ChartGroup from './ChartGroup';
+import React from 'react';
+
 const initialOptions: EChartsOption = {
   tooltip: {},
   xAxis: {
@@ -19,9 +21,9 @@ const initialOptions: EChartsOption = {
 const ChartDemo = () => {
   return (
     <>
-      <ChartGroup>
-        <Chart options={initialOptions} allowExport style={{ width: '100%', height: 300, border: '1px solid red' }} />
-        <Chart options={initialOptions} allowExport style={{ width: '100%', height: 300, border: '1px solid red' }} />
+      <ChartGroup style={{ width: '50%', height: '100%', border: '1px solid red' }}>
+        <Chart options={initialOptions} style={{ width: '100%', height: '50%', border: '1px solid red' }} />
+        <Chart options={initialOptions} style={{ width: '100%', height: '50%', border: '1px solid red' }} />
       </ChartGroup>
     </>
   );

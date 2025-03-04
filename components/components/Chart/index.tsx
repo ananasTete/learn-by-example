@@ -1,6 +1,5 @@
 import React, { FC, useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
-import ReactECharts from 'echarts-for-react';
 
 type ChartProps = {
   options: echarts.EChartsOption;
@@ -8,16 +7,24 @@ type ChartProps = {
   width?: string | number;
   height?: string | number;
   style?: React.CSSProperties;
-  allowExport?: boolean;
 };
 
-const Chart: FC<ChartProps> = ({ options, loading = false, width = '100%', height = '100%', style, allowExport = false }) => {
-  const chartRef = useRef<ReactECharts>(null);
+const Chart: FC<ChartProps> = ({ options, loading = false, width = '100%', height = '100%', style }) => {
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartInstance = useRef<echarts.ECharts>(null);
+
+  // 初始化 chart
+  useEffect(() => {
+    chartInstance.current = echarts.init(chartRef.current);
+    chartInstance.current?.setOption(options);
+  }, [options]);
 
   // 自动 resize
   useEffect(() => {
     const handleResize = () => {
-      chartRef.current?.getEchartsInstance()?.resize();
+      requestAnimationFrame(() => {
+        chartInstance.current?.resize();
+      });
     };
     window.addEventListener('resize', handleResize);
 
@@ -28,20 +35,21 @@ const Chart: FC<ChartProps> = ({ options, loading = false, width = '100%', heigh
 
   // 加载状态
   useEffect(() => {
-    const chartInstance = chartRef.current?.getEchartsInstance();
-    if (!chartInstance) return;
+    const instance = chartInstance.current;
+    if (!instance) return;
     if (loading) {
-      chartInstance.showLoading();
+      instance.showLoading();
     } else {
-      chartInstance.hideLoading();
+      instance.hideLoading();
     }
   }, [loading]);
 
   // 导出为图片
   const handleExport = () => {
-    const chartInstance = chartRef.current?.getEchartsInstance();
-    if (!chartInstance) return;
-    const url = chartInstance.getDataURL({
+    const instance = chartInstance.current;
+    if (!instance) return;
+
+    const url = instance.getDataURL({
       type: 'png',
       pixelRatio: 2,
       backgroundColor: '#fff',
@@ -53,28 +61,17 @@ const Chart: FC<ChartProps> = ({ options, loading = false, width = '100%', heigh
     a.click();
   };
 
-  return (
-    <div className="relative" style={{ width, height, ...style }}>
-      {allowExport && (
-        <div className="absolute top-0 right-0 z-10">
-          <button disabled={loading} onClick={handleExport}>
-            导出
-          </button>
-        </div>
-      )}
-      <ReactECharts ref={chartRef} option={options} />
-    </div>
-  );
+  return <div ref={chartRef} onClick={handleExport} className="relative" style={{ width, height, ...style }} />;
 };
 
 export default Chart;
 
 /**
- * 使用 echarts-for-react 库
- * 
- * 1. 自动 resize 功能
- * 
+ * 1. 自动 resize 功能，使用 requestAnimationFrame 实现高效重绘。
+ *
  * 2. 导出为图片功能
- * 
+ *
  * 3. 加载状态功能
+ *
+ * 使用 echarts-for-react 库，支持自动 resize、加载状态功能。
  */
