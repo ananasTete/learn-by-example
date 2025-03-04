@@ -1,0 +1,7 @@
+---
+description: *.tsx
+globs: 
+alwaysApply: false
+---
+
+1. 使用 FC 为组件声明类型
