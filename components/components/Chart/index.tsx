@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
-
+import { useChartGroup } from './ChartGroup';
 type ChartProps = {
   options: echarts.EChartsOption;
   loading?: boolean;
@@ -13,11 +13,24 @@ const Chart: FC<ChartProps> = ({ options, loading = false, width = '100%', heigh
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts>(null);
 
+  const { registerChart, unregisterChart } = useChartGroup();
+
   // 初始化 chart
   useEffect(() => {
     chartInstance.current = echarts.init(chartRef.current);
     chartInstance.current?.setOption(options);
   }, [options]);
+
+  useEffect(() => {
+    if (chartRef.current && chartInstance.current) {
+      registerChart(chartRef.current, chartInstance.current);
+    }
+    return () => {
+      if (chartRef.current) {
+        unregisterChart(chartRef.current);
+      }
+    };
+  }, []);
 
   // 自动 resize
   useEffect(() => {
@@ -61,7 +74,7 @@ const Chart: FC<ChartProps> = ({ options, loading = false, width = '100%', heigh
     a.click();
   };
 
-  return <div ref={chartRef} onClick={handleExport} className="relative" style={{ width, height, ...style }} />;
+  return <div ref={chartRef} onClick={handleExport} style={{ width, height, ...style, transition: 'all 0.3s ease' }} />;
 };
 
 export default Chart;
@@ -74,4 +87,8 @@ export default Chart;
  * 3. 加载状态功能
  *
  * 使用 echarts-for-react 库，支持自动 resize、加载状态功能。
+ */
+
+/**
+ * 不该根据 window 的 resize 事件来触发 resize，因为他可能是固定宽高的，或者他的容器是可以拖拽设置宽高的。要改！！！！
  */
