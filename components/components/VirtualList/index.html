@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .wrapper {
+            width: 600px;
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid gray;
+        }
+
+        .inner {
+            position: relative;
+            background-color: pink;
+        }
+
+        .virtual-item {
+            box-sizing: border-box;
+            position: absolute;
+            padding: 16px 20px;
+            width: 100%;
+            height: 100px;
+            left: 0;
+            transition: transform 0.2s;
+            background-color: white;
+        }
+
+        .virtual-item:hover {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="inner"></div>
+    </div>
+    <script>
+        class VirtualList {
+            constructor(options) {
+                const { wrapper, inner, itemHeight, bufferSize } = options;
+                this.wrapper = wrapper;
+                this.inner = inner;
+                this.itemHeight = itemHeight || 100
+                this.bufferSize = bufferSize || 5
+
+                this.items = [];
+                this.visibleItems = new Map();
+                this.startIndex = 0;
+                this.endIndex = 0;
+
+                this.lastScrollTop = 0;
+                this.scrollTimeout = null;
+                this.wrapper.addEventListener('scroll', this.handleScroll.bind(this));
+            }
+
+            handleScroll() {
+                const { scrollTop } = this.wrapper;
+
+                // 如果滚动量不大，使用防抖，提高性能
+                if (Math.abs(scrollTop - this.lastScrollTop) < this.itemHeight) {
+                    if (this.scrollTimeout) {
+                        clearTimeout(this.scrollTimeout);
+                    }
+                    this.scrollTimeout = setTimeout(() => this.updateVisibleItems(), 100);
+                } else {
+                    // 如果滚动量大，立即更新
+                    this.updateVisibleItems();
+                    this.lastScrollTop = scrollTop;
+                }
+            }
+
+            updateInnerHeight() {
+                this.inner.style.height = this.items.length * this.itemHeight + 'px';
+            }
+
+            updateVisibleItems() {
+                if (!this.wrapper || this.items.length === 0) return;
+
+                // 计算新的开始和结束索引
+                const { scrollTop, clientHeight } = this.wrapper;
+                const startIndex = Math.max(0, Math.floor(scrollTop / this.itemHeight) - this.bufferSize)
+                const endIndex = Math.min(this.items.length - 1, Math.ceil((scrollTop + clientHeight) / this.itemHeight) + this.bufferSize)
+
+                // 在小范围滚动下新旧索引相同，不需要继续计算
+                if (startIndex === this.startIndex && endIndex === this.endIndex) {
+                    return;
+                }
+
+                this.startIndex = startIndex;
+                this.endIndex = endIndex;
+
+                // 统计新的索引项
+                const newIndexMap = new Set();
+                for (let i = this.startIndex; i <= this.endIndex; i++) {
+                    newIndexMap.add(i);
+                }
+
+                // 根据新的索引项清除不需要的 DOM 元素和索引
+                if (this.visibleItems.size > 0) {
+                    for (let [index, el] of this.visibleItems.entries()) {
+                        if (!newIndexMap.has(index)) {
+                            el.remove();
+                            this.visibleItems.delete(index);
+                        }
+                    }
+                }
+
+                // 添加新的 DOOM 元素和索引，使用 fragment 优化 DOM 操作性能
+                const fragment = document.createDocumentFragment();
+
+                for (let i = this.startIndex; i <= this.endIndex; i++) {
+                    if (!this.visibleItems.has(i)) {
+                        const el = this.generateItem(i);
+                        // 每个元素的位置根据其索引决定，所以不需要担心向上还是向下滚动，都可以 appendChild，DOM 结构里的顺序不重要
+                        fragment.appendChild(el);
+                        // 缓存新的元素
+                        this.visibleItems.set(i, el);
+                    }
+                }
+                this.inner.appendChild(fragment);
+            }
+
+            generateItem(i) {
+                // 拿到数据源用于渲染内容
+                const item = this.items[i];
+                const div = document.createElement('div');
+                div.innerHTML = `<div>${item.id}</div><div>${item.content}</div>`;
+                div.classList.add('virtual-item')
+                // 根据索引定义元素的位置
+                div.style.transform = `translateY(${i * this.itemHeight}px)`;
+                return div;
+            }
+
+            addItems(items) {
+                this.items = [...this.items, ...items];
+                this.updateInnerHeight();
+                this.updateVisibleItems()
+            }
+        }
+
+        // -------------------------------使用--------------------------------
+
+        const virtualList = new VirtualList({
+            wrapper: document.querySelector('.wrapper'),
+            inner: document.querySelector('.inner'),
+            itemHeight: 100,
+            bufferSize: 5,
+        });
+
+        // 生成测试数据
+        function generateItems(count, startId = 1) {
+            return Array.from({ length: count }, (_, i) => ({
+                id: startId + i,
+                content: `这是一个测试内容，展示了虚拟列表的项目 #${startId + i}。虚拟列表可以高效地渲染大量数据，而不会影响性能。`
+            }));
+        }
+
+        virtualList.addItems(generateItems(1000));
+    </script>
+</body>
+
+</html>
