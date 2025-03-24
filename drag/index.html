@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag</title>
+    <style>
+        .draggable {
+            width: 100px;
+            height: 100px;
+            background-color: lightblue;
+
+        }
+
+        .droppable {
+            width: 200px;
+            height: 200px;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+
+<body>
+    <div draggable="true" class="draggable">你好</div>
+
+    <div class="droppable">
+        <p>Drop here</p>
+    </div>
+
+    <script>
+        const draggable = document.querySelector('div');
+        const droppable = document.querySelector('.droppable');
+
+        draggable.ondragstart = (e) => {
+            e.dataTransfer.setData('text/plain', e.target.className); // 设置拖拽数据
+            e.dataTransfer.setDragImage(e.target, 0, 0); // 设置拖拽过程中图像及其偏移量, e.target 表示拖拽元素本身，可以设置为其他元素的引用
+        }
+
+        droppable.ondragenter = (e) => {
+            e.preventDefault();
+        }
+
+        droppable.ondragover = (e) => {
+            e.preventDefault();
+        }
+
+        droppable.ondrop = (e) => {
+            e.preventDefault();
+            const className = e.dataTransfer.getData('text/plain');
+
+            // 移动元素
+            droppable.appendChild(document.querySelector(`.${className}`));
+
+            // 复制元素
+            // droppable.appendChild(document.querySelector(`.${className}`).cloneNode(true));
+        }
+    </script>
+</body>
+
+</html>

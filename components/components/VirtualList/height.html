@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Variable Height Virtual List - Fixed</title>
+    <style>
+        .wrapper {
+            width: 600px;
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid gray;
+        }
+
+        .inner {
+            position: relative;
+        }
+
+        .virtual-item {
+            box-sizing: border-box;
+            position: absolute;
+            width: 100%;
+            left: 0;
+            padding: 0 20px;
+            background-color: white;
+            border-bottom: 1px solid #eee;
+        }
+
+        .virtual-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        /* 添加一些随机样式，让内容高度差异更明显 */
+        .size-1 {
+            font-size: 14px;
+        }
+
+        .size-2 {
+            font-size: 16px;
+        }
+
+        .size-3 {
+            font-size: 18px;
+        }
+
+        /* 预渲染区域样式 */
+        .measure-container {
+            position: absolute;
+            left: 0;
+            top: -9999px;
+            /* 放到可视区域外 */
+            width: 100%;
+            visibility: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="inner"></div>
+    </div>
+    <div class="stats" style="margin-top: 10px; font-size: 12px;"></div>
+    <div class="measure-container"></div>
+
+    <script>
+        class VariableHeightVirtualList {
+            constructor(options) {
+                const {
+                    wrapper,
+                    inner,
+                    renderItem,
+                    estimatedItemHeight = 100,
+                    bufferSize = 5,
+                    totalCount = 0,
+                    preRenderCount = 30 // 预渲染测量的数量
+                } = options;
+
+                this.wrapper = wrapper;
+                this.inner = inner;
+                this.renderItem = renderItem;
+                this.estimatedItemHeight = estimatedItemHeight;
+                this.bufferSize = bufferSize;
+                this.totalCount = totalCount;
+                this.preRenderCount = preRenderCount;
+
+                // 缓存测量的高度
+                this.heightCache = new Map();
+                this.visibleItems = new Map();
+                this.positionCache = [];
+                this.firstRender = true;
+
+                // 测量容器
+                this.measureContainer = document.querySelector('.measure-container');
+
+                // 初始化 ResizeObserver
+                this.setupResizeObserver();
+
+                // 监听滚动事件
+                this.wrapper.addEventListener('scroll', this.onScroll.bind(this));
+
+                // 初始化前先进行预渲染测量
+                this.preRenderAndMeasure()
+                    .then(() => {
+                        // 初始渲染
+                        this.updatePositionCache();
+                        this.updateInnerHeight();
+                        this.renderVisibleItems();
+                        this.firstRender = false;
+                    });
+
+                // 调试信息
+                this.stats = document.querySelector('.stats');
+                this.renderCount = 0;
+            }
+
+            // 预渲染并测量一批元素
+            async preRenderAndMeasure() {
+                // 清空测量容器
+                this.measureContainer.innerHTML = '';
+
+                // 决定预渲染的数量
+                const count = Math.min(this.preRenderCount, this.totalCount);
+
+                // 创建临时测量元素
+                for (let i = 0; i < count; i++) {
+                    const el = document.createElement('div');
+                    el.classList.add('virtual-item');
+                    el.dataset.index = i;
+
+                    if (this.renderItem) {
+                        el.appendChild(this.renderItem(i));
+                    } else {
+                        el.textContent = `Item ${i}`;
+                    }
+
+                    this.measureContainer.appendChild(el);
+                }
+
+                // 等待一帧以确保DOM已更新
+                await new Promise(resolve => requestAnimationFrame(resolve));
+
+                // 测量高度并缓存
+                const elements = this.measureContainer.querySelectorAll('.virtual-item');
+                elements.forEach(el => {
+                    const index = parseInt(el.dataset.index, 10);
+                    const height = el.offsetHeight;
+                    this.heightCache.set(index, height);
+                });
+
+                // 计算所有剩余元素的平均高度作为估计值
+                if (elements.length > 0) {
+                    let totalHeight = 0;
+                    elements.forEach(el => {
+                        totalHeight += el.offsetHeight;
+                    });
+                    this.averageHeight = totalHeight / elements.length;
+
+                    // 更新估计高度为平均高度
+                    this.estimatedItemHeight = this.averageHeight;
+                }
+
+                // 清空测量容器
+                this.measureContainer.innerHTML = '';
+            }
+
+            setupResizeObserver() {
+                if (typeof ResizeObserver !== 'undefined') {
+                    this.resizeObserver = new ResizeObserver(entries => {
+                        let updated = false;
+
+                        for (const entry of entries) {
+                            const el = entry.target;
+                            const index = parseInt(el.dataset.index, 10);
+                            const height = entry.contentRect.height;
+
+                            // 更新高度缓存
+                            if (this.heightCache.get(index) !== height) {
+                                this.heightCache.set(index, height);
+                                updated = true;
+                            }
+                        }
+
+                        if (updated) {
+                            this.updatePositionCache();
+                            this.updateInnerHeight();
+
+                            // 更新所有可见元素的位置
+                            for (const [index, el] of this.visibleItems.entries()) {
+                                el.style.transform = `translateY(${this.positionCache[index]}px)`;
+                            }
+                        }
+                    });
+                }
+            }
+
+            // 计算每个元素的位置
+            updatePositionCache() {
+                this.positionCache = [];
+                let totalHeight = 0;
+
+                for (let i = 0; i < this.totalCount; i++) {
+                    this.positionCache[i] = totalHeight;
+                    totalHeight += this.getItemHeight(i);
+                }
+            }
+
+            // 获取元素高度 (已缓存或估计值)
+            getItemHeight(index) {
+                return this.heightCache.has(index) ?
+                    this.heightCache.get(index) :
+                    this.estimatedItemHeight;
+            }
+
+            // 获取列表总高度
+            getTotalHeight() {
+                if (this.totalCount === 0) return 0;
+                const lastIndex = this.totalCount - 1;
+                return this.positionCache[lastIndex] + this.getItemHeight(lastIndex);
+            }
+
+            // 更新内部容器高度
+            updateInnerHeight() {
+                this.inner.style.height = `${this.getTotalHeight()}px`;
+            }
+
+            // 查找指定位置对应的元素索引
+            findIndexByPosition(position) {
+                // 优化：检查边界情况
+                if (position <= 0) return 0;
+                if (position >= this.getTotalHeight()) return this.totalCount - 1;
+
+                // 二分查找
+                let low = 0;
+                let high = this.totalCount - 1;
+
+                while (low <= high) {
+                    const mid = Math.floor((low + high) / 2);
+                    const midPos = this.positionCache[mid];
+                    const nextPos = mid < this.totalCount - 1 ? this.positionCache[mid + 1] : this.getTotalHeight();
+
+                    if (position >= midPos && position < nextPos) {
+                        return mid;
+                    } else if (position < midPos) {
+                        high = mid - 1;
+                    } else {
+                        low = mid + 1;
+                    }
+                }
+
+                return 0; // 兜底返回
+            }
+
+            // 滚动处理函数
+            onScroll() {
+                // 使用RAF减少滚动时的计算次数
+                if (!this.scrollRAF) {
+                    this.scrollRAF = requestAnimationFrame(() => {
+                        this.renderVisibleItems();
+                        this.scrollRAF = null;
+                    });
+                }
+            }
+
+            // 渲染可见区域的元素
+            renderVisibleItems() {
+                this.renderCount++;
+                const { scrollTop, clientHeight } = this.wrapper;
+
+                // 找到可视区域内的元素索引范围
+                const startIndex = Math.max(0, this.findIndexByPosition(scrollTop) - this.bufferSize);
+                const endIndex = Math.min(
+                    this.totalCount - 1,
+                    this.findIndexByPosition(scrollTop + clientHeight) + this.bufferSize
+                );
+
+                // 记录当前应该显示的元素集合
+                const visibleIndices = new Set();
+                for (let i = startIndex; i <= endIndex; i++) {
+                    visibleIndices.add(i);
+                }
+
+                // 移除不在可视区域的元素
+                for (const [index, el] of this.visibleItems.entries()) {
+                    if (!visibleIndices.has(index)) {
+                        if (this.resizeObserver) {
+                            this.resizeObserver.unobserve(el);
+                        }
+                        el.remove();
+                        this.visibleItems.delete(index);
+                    }
+                }
+
+                // 添加新的可视元素
+                const fragment = document.createDocumentFragment();
+                for (let i = startIndex; i <= endIndex; i++) {
+                    if (!this.visibleItems.has(i)) {
+                        const el = this.createItemElement(i);
+                        fragment.appendChild(el);
+                        this.visibleItems.set(i, el);
+
+                        if (this.resizeObserver) {
+                            this.resizeObserver.observe(el);
+                        }
+                    } else {
+                        // 已存在的元素，确保位置正确
+                        const el = this.visibleItems.get(i);
+                        el.style.transform = `translateY(${this.positionCache[i]}px)`;
+                    }
+                }
+
+                this.inner.appendChild(fragment);
+
+                // 异步测量新渲染元素的实际高度，并在必要时更新位置
+                if (fragment.childNodes.length > 0) {
+                    requestAnimationFrame(() => {
+                        let updated = false;
+
+                        for (let i = startIndex; i <= endIndex; i++) {
+                            const el = this.visibleItems.get(i);
+
+                            // 如果这是个新元素且高度未缓存或与缓存不同
+                            if (el && (!this.heightCache.has(i) || el.offsetHeight !== this.heightCache.get(i))) {
+                                const currentHeight = this.heightCache.get(i) || this.estimatedItemHeight;
+                                const actualHeight = el.offsetHeight;
+
+                                // 有显著差异才更新
+                                if (Math.abs(currentHeight - actualHeight) > 1) {
+                                    this.heightCache.set(i, actualHeight);
+                                    updated = true;
+                                }
+                            }
+                        }
+
+                        // 如果有高度更新，重新计算位置
+                        if (updated) {
+                            this.updatePositionCache();
+                            this.updateInnerHeight();
+
+                            // 更新所有可见元素的位置
+                            for (const [index, el] of this.visibleItems.entries()) {
+                                el.style.transform = `translateY(${this.positionCache[index]}px)`;
+                            }
+                        }
+                    });
+                }
+
+                // 更新调试信息
+                if (this.stats) {
+                    this.stats.textContent = `渲染次数: ${this.renderCount}, 可见元素: ${this.visibleItems.size}, 范围: ${startIndex}-${endIndex}, 总高度: ${this.getTotalHeight()}px, 平均高度: ${this.estimatedItemHeight.toFixed(2)}px`;
+                }
+            }
+
+            // 创建列表项元素
+            createItemElement(index) {
+                const el = document.createElement('div');
+                el.classList.add('virtual-item');
+                el.dataset.index = index;
+
+                // 定位元素
+                el.style.transform = `translateY(${this.positionCache[index]}px)`;
+
+                // 渲染内容
+                if (this.renderItem) {
+                    el.appendChild(this.renderItem(index));
+                } else {
+                    el.textContent = `Item ${index}`;
+                }
+
+                return el;
+            }
+
+            // 设置新的数据总数
+            setTotalCount(count) {
+                this.totalCount = count;
+                this.updatePositionCache();
+                this.updateInnerHeight();
+                this.renderVisibleItems();
+            }
+
+            // 重置列表
+            reset() {
+                this.inner.innerHTML = '';
+                this.visibleItems.clear();
+                this.heightCache.clear();
+                this.renderCount = 0;
+
+                // 重新预渲染测量
+                this.preRenderAndMeasure()
+                    .then(() => {
+                        this.updatePositionCache();
+                        this.updateInnerHeight();
+                        this.renderVisibleItems();
+                    });
+            }
+
+            // 刷新列表
+            refresh() {
+                this.updatePositionCache();
+                this.updateInnerHeight();
+                this.renderVisibleItems();
+            }
+        }
+
+        // -------------------------- 使用示例 --------------------------
+
+        // 创建测试数据
+        function createTestData(count) {
+            return Array.from({ length: count }, (_, i) => ({
+                id: i,
+                title: `项目 #${i}`,
+                size: Math.floor(Math.random() * 3) + 1, // 随机大小 1-3
+                lines: Math.floor(Math.random() * 5) + 1, // 随机行数 1-5
+            }));
+        }
+
+        // 初始化数据
+        const items = createTestData(10000);
+
+        // 渲染函数 - 创建不同高度的内容
+        function renderItem(index) {
+            const item = items[index];
+            const div = document.createElement('div');
+
+            div.classList.add(`size-${item.size}`);
+
+            const content = [];
+            content.push(`<h3>项目 #${item.id}</h3>`);
+
+            // 生成随机行数的内容
+            for (let i = 0; i < item.lines; i++) {
+                content.push(`<p>这是第 ${i + 1} 行内容，项目高度会因内容而变化。</p>`);
+            }
+
+            div.innerHTML = content.join('');
+            return div;
+        }
+
+        // 初始化虚拟列表
+        const virtualList = new VariableHeightVirtualList({
+            wrapper: document.querySelector('.wrapper'),
+            inner: document.querySelector('.inner'),
+            renderItem: renderItem,
+            estimatedItemHeight: 100,
+            bufferSize: 10,
+            totalCount: items.length,
+            preRenderCount: 50 // 预渲染前50个项目来得到更准确的高度估计
+        });
+    </script>
+</body>
+
+</html>
