@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        const ws = new WebSocket('ws://localhost:8080');
+
+        /**
+         * 尝试建立连接错误触发
+         */
+
+        ws.onerror = (event) => {
+            console.log('error', event);
+        }
+
+        /**
+         * 尝试建立连接成功触发
+         */
+
+        ws.onopen = () => {
+            // 创建成功后可以发送消息：值可以是字符串、Blob、ArrayBuffer
+
+            // 可以通过 JSON 发送复杂数据，可以通过 type 区分消息类型
+            ws.send(JSON.stringify({
+                type: 'login',
+                data: {
+                    name: '张三'
+                }
+            }));
+
+            // 发送后尝试关闭连接
+            setTimeout(() => {
+                // bufferedAmount 表示还有多少字节的二进制数据没有发送出去
+                if (ws.bufferedAmount > 0) {
+                    console.log('bufferedAmount', ws.bufferedAmount);
+                } else {
+                    // 关闭连接
+                    ws.close();
+                }
+            }, 10000);
+        }
+
+        /**
+         * 连接关闭触发
+         */
+
+        ws.onclose = () => {
+            console.log('close');
+        }
+
+        /**
+         * 收到消息触发
+         */
+
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+
+            // 根据 type 区分消息类型
+            switch (msg.type) {
+                case 'login':
+                    console.log('login', msg.data);
+                    break;
+                case 'logout':
+                    console.log('logout', msg.data);
+                    break;
+            }
+        }
+    </script>
+</body>
+
+</html>

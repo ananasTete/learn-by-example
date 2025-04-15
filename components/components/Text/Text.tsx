@@ -46,4 +46,6 @@ export default Text;
  * 用以上的方法省略文本时，scrollHeight 还是没省略时的高度， clientHeight 是省略后的高度。对比可知是否省略了。
  * 
  * 3. 可以结合 antd 的 Tooltip 组件。
+ * 
+ * 4. TODO 必须要配置宽度或者最大宽度的问题
  */

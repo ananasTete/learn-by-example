@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import Edit from './Edit/index.vue';
 </script>
 
 <template>
-  <h1>ceshi</h1>
+  <Edit />
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>
