@@ -12,7 +12,7 @@ type Options = {
 };
 
 export type Result = {
-  message?: WebSocketEventMap['message'];
+  message: WebSocketEventMap['message'] | undefined;
   sendMessage: WebSocket['send'];
   disconnect: () => void;
   connect: () => void;
@@ -26,11 +26,11 @@ function useWebSocket(socketUrl: string, options: Options = {}): Result {
   const onMessageRef = useLatest(onMessage);
   const onErrorRef = useLatest(onError);
 
-  const websocketRef = useRef<WebSocket>();
-  const [message, setMessage] = useState<WebSocketEventMap['message']>();
+  const websocketRef = useRef<WebSocket | undefined>(undefined);
+  const [message, setMessage] = useState<WebSocketEventMap['message'] | undefined>(undefined);
 
   const reconnectTimesRef = useRef(0);
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const reconnect = () => {
     // 还有剩余次数并且连接没有打开，则进行重连
