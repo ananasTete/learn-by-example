@@ -139,3 +139,7 @@ function useWebSocket(socketUrl: string, options: Options = {}): Result {
 }
 
 export default useWebSocket;
+
+/**
+ * 这个 hook 的主要难点在处理各种边界情况上，连接 websocket 以及请求重试倒没啥。
+ */

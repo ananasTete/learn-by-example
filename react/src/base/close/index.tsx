@@ -42,7 +42,7 @@ export default CounterWithStaleClosure;
  * 
  * 第一次渲染时，useEffect 的回调就是一个闭包。
  * 
- * 下一次渲染时， count 和 logCurrentCount 函数被重新创建，但 useEffect 不会重新注册。
+ * 下一次渲染时， count 和 logCurrentCount 函数被重新创建，但 useEffect 回调不会重新注册。
  * 
  * 所以，logCurrentCount 函数在闭包中捕获的 count 值始终是 0。
  * 
