@@ -12,7 +12,7 @@
       <!-- 内容区域 -->
       <el-container class="main-container">
         <!-- 左侧边栏 -->
-        <el-aside :width="leftCollapse ? '0px' : '300px'" class="aside left-aside">
+        <el-aside :width="leftCollapse ? '0px' : '200px'" class="aside left-aside">
           <Left />
         </el-aside>
 
@@ -20,7 +20,7 @@
         <el-main class="main-content"> </el-main>
 
         <!-- 右侧边栏 -->
-        <el-aside :width="rightCollapse ? '0px' : '500px'" class="aside right-aside"> </el-aside>
+        <el-aside :width="rightCollapse ? '0px' : '300px'" class="aside right-aside"> </el-aside>
       </el-container>
     </el-container>
   </div>

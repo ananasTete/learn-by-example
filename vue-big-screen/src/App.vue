@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Edit from './Edit/index.vue';
+import Edit from './edit/index.vue';
 </script>
 
 <template>

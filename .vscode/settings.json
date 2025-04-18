@@ -6,8 +6,8 @@
     "**/package-lock.json": true,
     "**/yarn.lock": true,
     "**/pnpm-lock.yaml": true,
-    "**/tsconfig*.json": true,
-    "**/vite.config.ts": true,
+    // "**/tsconfig*.json": true,
+    // "**/vite.config.ts": true,
     "**/eslint.config.js": true,
     "**/.prettierrc": true,
   }

@@ -1,3 +1,3 @@
-import bars from './bars';
+import Bars from './Bars';
 
-export default [...bars];
+export default [...Bars];
