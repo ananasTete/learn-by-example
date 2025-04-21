@@ -1,9 +1,10 @@
-import Charts from './components/Charts';
 import { PackagesCategoryEnum } from './type';
 
-export const packageList = {
-  [PackagesCategoryEnum.CHARTS]: Charts,
-};
+const Charts: Record<string, { default: any }> = import.meta.glob('./components/Charts/*/*/index.ts', {
+  eager: true,
+});
 
-console.log(packageList);
+export const packageList = {
+  [PackagesCategoryEnum.CHARTS]: Object.values(Charts).map((item) => item.default),
+};
 
