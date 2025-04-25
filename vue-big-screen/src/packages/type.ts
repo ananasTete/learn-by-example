@@ -1,10 +1,12 @@
+import type { Component } from "vue";
 
-
-export const PackagesCategoryEnum = {
-  CHARTS: 'Charts',
-} as const;
-
-export const PackagesCategoryNameEnum = {
-  [PackagesCategoryEnum.CHARTS]: '图表',
-} as const;
-
+export type ChartConfig = {
+  metadata: {
+    key: string;
+    title: string;
+    image: string;
+  };
+  render: () => Promise<Component>;
+  config: () => any;
+  createConfig: () => any;
+};

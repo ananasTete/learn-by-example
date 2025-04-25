@@ -17,7 +17,9 @@
         </el-aside>
 
         <!-- 中间内容 -->
-        <el-main class="main-content"> </el-main>
+        <el-main class="bg-gray-200"> 
+          <Content />
+        </el-main>
 
         <!-- 右侧边栏 -->
         <el-aside :width="rightCollapse ? '0px' : '300px'" class="aside right-aside"> </el-aside>
@@ -28,7 +30,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import Left from './left/index.vue';
+import Left from './components/left/index.vue';
+import Content from './components/content/index.vue';
 
 // 控制侧边栏折叠状态
 const leftCollapse = ref(false);
@@ -77,7 +80,6 @@ const toggleRightSidebar = () => {
 
     .main-content {
       background-color: #ffffff;
-      padding: 1.25rem;
     }
   }
 }
