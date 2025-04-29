@@ -1,5 +1,9 @@
+import LongPress from "@/event/long_press";
+
 const App = () => {
-  return <h1>App</h1>;
+  return <>
+    <LongPress /> 
+  </>;
 };
 
 export default App;
