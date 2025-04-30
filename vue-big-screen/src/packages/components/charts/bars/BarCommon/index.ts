@@ -1,6 +1,7 @@
 import BarX from '@/assets/images/chart/charts/bar_x.png';
 import type { ChartConfig } from '../../../../type';
 import { defineAsyncComponent } from 'vue';
+import echartsConfig from './echartsConfig';
 
 const BarConfig: ChartConfig = {
   metadata: {
@@ -9,22 +10,17 @@ const BarConfig: ChartConfig = {
     image: BarX,
   },
   render: defineAsyncComponent(() => import('./render.vue')),
-  config: () => import('./config.vue'),
+  config: defineAsyncComponent(() => import('./config.vue')),
   createConfig: () => ({
     position: {
-      x: 0,
-      y: 0,
+      left: 0,
+      top: 0,
     },
     size: {
-      width: 100,
-      height: 100,
+      width: 300,
+      height: 200,
     },
-    options: {
-      title: '柱状图',
-      xAxis: [],
-      yAxis: [],
-      series: [],
-    },
+    options: echartsConfig,
   }),
 };
 

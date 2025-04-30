@@ -12,7 +12,7 @@ export const useEditingStore = defineStore('editing', () => {
     return chart || null;
   });
 
-  function addInstance(chartKey: string, position: { x: number; y: number }) {
+  function addInstance(chartKey: string, position: { left: number; top: number }) {
     const chartConfig = chartRegistry.get(chartKey);
     if (!chartConfig) {
       console.error(`Chart with key ${chartKey} not found`);
@@ -30,8 +30,12 @@ export const useEditingStore = defineStore('editing', () => {
       },
     };
     instances.value.push(instance);
-    currentInstanceId.value = instance.instanceId;
+    selectInstance(instance.instanceId);
   }
 
-  return { instances, currentInstance, metadata, currentInstanceId, addInstance };
+  function selectInstance(instanceId: string) {
+    currentInstanceId.value = instanceId;
+  }
+
+  return { instances, currentInstance, metadata, currentInstanceId, addInstance, selectInstance };
 });

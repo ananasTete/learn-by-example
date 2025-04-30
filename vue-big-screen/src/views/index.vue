@@ -22,7 +22,9 @@
         </el-main>
 
         <!-- 右侧边栏 -->
-        <el-aside :width="rightCollapse ? '0px' : '300px'" class="aside right-aside"> </el-aside>
+        <el-aside :width="rightCollapse ? '0px' : '300px'" class="aside right-aside"> 
+          <Right />
+        </el-aside>
       </el-container>
     </el-container>
   </div>
@@ -30,8 +32,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import Left from './components/left/index.vue';
-import Content from './components/content/index.vue';
+import Left from './components/left.vue';
+import Content from './components/content.vue';
+import Right from './components/right.vue';
 
 // 控制侧边栏折叠状态
 const leftCollapse = ref(false);
