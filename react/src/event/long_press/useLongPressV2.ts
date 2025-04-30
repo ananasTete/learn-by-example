@@ -82,7 +82,7 @@ export const useLongPress = ({ delay = 300, onLongPressStart, onLongPressEnd, on
         timeoutRef.current = null;
       }, delay);
     },
-    [delay, onLongPressStart, cleanup],
+    [delay, onLongPressStart],
   );
 
   // 抬起
