@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { chartOptions } from '../../../packages';
+import { chartOptions } from '../../packages';
 
 const handleDragStart = (event: any, chart: any) => {
   // 设置图像位置为鼠标开始拖拽的位置
   event.dataTransfer.setDragImage(event.target, event.offsetX, event.offsetY);
 
   // 设置拖拽数据
-  event.dataTransfer.setData('text/plain', chart.metadata.key);
+  event.dataTransfer.setData('text/plain', JSON.stringify({ key: chart.metadata.key, startOffsetX: event.offsetX, startOffsetY: event.offsetY }));
 };
 </script>
 
@@ -19,13 +19,7 @@ const handleDragStart = (event: any, chart: any) => {
         <div class="text-sm text-gray-500">{{ chart.metadata.title }}</div>
 
         <!-- draggable element -->
-        <img
-          draggable="true"
-          @dragstart="handleDragStart($event, chart)"
-          :src="chart.metadata.image"
-          loading="lazy"
-          class="mt-1 w-full"
-        />
+        <img draggable="true" @dragstart="handleDragStart($event, chart)" :src="chart.metadata.image" loading="lazy" class="mt-1 w-full" />
       </div>
     </div>
   </div>
