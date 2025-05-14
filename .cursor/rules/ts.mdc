@@ -1,7 +1,0 @@
----
-description: *.ts, *.tsx
-globs: 
-alwaysApply: false
----
-优先使用 type 而不是 interface，包括为 react 组件的参数声明类型。
-
